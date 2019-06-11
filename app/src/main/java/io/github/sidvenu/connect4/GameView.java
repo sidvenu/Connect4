@@ -7,7 +7,9 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.Build;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -20,16 +22,16 @@ import androidx.annotation.RequiresApi;
 
 public class GameView extends View {
 
-
-    private static final String LOGTAG = "TAG";
     Context context;
     boolean touchEnabled = true;
-    Paint xPaint = new Paint(), oPaint = new Paint(), winStrokePaint = new Paint();
+    Paint xPaint = new Paint(), oPaint = new Paint(), winStrokePaint = new Paint(), gridPaint = new Paint(), nonFilledPaint = new Paint();
     int rows = 6;
     int cols = 7;
     int winStrokeWidth = 10;
     int y;
     int col;
+    float diameter;
+    int padding = 10;
     String PROPERTY_Y = "prop_y";
 
     boolean computerPlaying = true;
@@ -61,11 +63,15 @@ public class GameView extends View {
         this.context = context;
         xPaint.setColor(getResources().getColor(android.R.color.holo_red_dark));
         oPaint.setColor(getResources().getColor(android.R.color.holo_blue_dark));
+        nonFilledPaint.setColor(getResources().getColor(android.R.color.white));
         winStrokePaint.setColor(getResources().getColor(R.color.yellow));
         winStrokePaint.setStyle(Paint.Style.STROKE);
         winStrokePaint.setStrokeWidth(winStrokeWidth);
         computerPlayer = new MinMax(State.O);
-        setGridDimensions(3, 7);
+        gridPaint.setColor(getResources().getColor(android.R.color.darker_gray));
+        gridPaint.setStyle(Paint.Style.STROKE);
+        gridPaint.setStrokeWidth(5);
+        setGridDimensions(6, 7);
     }
 
     public void setGridDimensions(int rows, int cols) {
@@ -83,9 +89,10 @@ public class GameView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         if (touchEnabled) {
             float x = event.getX();
+            float y = event.getY();
 
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                handleTouch(x);
+                handleTouch(x, y);
                 performClick();
                 return true;
             }
@@ -98,8 +105,11 @@ public class GameView extends View {
         return super.performClick();
     }
 
-    private void handleTouch(float x) {
+    private void handleTouch(float x, float y) {
+        diameter = getWidth() * 1.0f / cols - padding;
         col = (int) (cols * x / getWidth());
+        if(y<getYGrid(0)||y>getYGrid(rows))
+            return;
 
         /*int times = 0;
         for (Integer i : game) {
@@ -134,56 +144,77 @@ public class GameView extends View {
                     }
                     //current = null;
                     invalidate();
-                    if (computerPlaying && theBoard.lastLetterPlayed == State.X) {
-                        float x = getX(computerPlayer.getNextMove(theBoard).col);
-                        MotionEvent computerTouch = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.elapsedRealtime() + 100, MotionEvent.ACTION_DOWN, x, 0f, 0);
-                        onTouchEvent(computerTouch);
-                    }
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (computerPlaying && theBoard.lastLetterPlayed == State.X) {
+                                float x = getX(computerPlayer.getNextMove(theBoard).col);
+                                MotionEvent computerTouch = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.elapsedRealtime() + 100, MotionEvent.ACTION_DOWN, x, getHeight()/2.0f, 0);
+                                onTouchEvent(computerTouch);
+                            }
+                        }
+                    }, 100);
                 }
             });
             animator.start();
         }
     }
 
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        Log.v(LOGTAG, "" + getWidth());
-        float diameter = getWidth() * 1.0f / cols;
+        diameter = getWidth() * 1.0f / cols - padding;
+        gridPaint.setStyle(Paint.Style.FILL);
+        //canvas.drawPaint(gridPaint);
+        canvas.drawRect(getXGrid(0), getYGrid(0), getXGrid(cols), getYGrid(rows), gridPaint);
+
+
         int[][] board = theBoard.gameBoard;
-        for (int row = 0; row < theBoard.rows; row++) {
-            for (int col = 0; col < theBoard.cols; col++) {
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
                 int e = board[row][col];
                 if (e == State.X || e == State.O) {
                     Paint p = xPaint;
                     if (e == State.O)
                         p = oPaint;
                     canvas.drawCircle(getX(col), getY(row), diameter / 2, p);
-                    if (theBoard.checkGameOver()) {
+                    if (theBoard.checkGameOver() && theBoard.winner != State.EMPTY) {
                         for (int i = 0; i < 4; i++)
                             if (row == theBoard.winningPositions[i][0] && col == theBoard.winningPositions[i][1])
                                 canvas.drawCircle(getX(col), getY(row), (diameter - winStrokeWidth) / 2, winStrokePaint);
                     }
+                } else {
+                    canvas.drawCircle(getX(col), getY(row), diameter / 2, nonFilledPaint);
                 }
-
             }
-            /*Integer e = game.get(i);
-            int times = 0;
-            for (int j = 0; j < i; j++)
-                if (e.equals(game.get(j)))
-                    times++;
-            Paint p = i % 2 == 0 ? xPaint : oPaint;
-            canvas.drawCircle(getX(e), getY(times), diameter / 2, p);*/
         }
+        /*//horizontal
+        for(int row = 0; row<= rows; row++)
+            canvas.drawLine(getXGrid(0), getYGrid(row), getXGrid(cols), getYGrid(row), gridPaint);
+        //vertical
+        for(int col = 0; col<= cols; col++)
+            canvas.drawLine(getXGrid(col), getYGrid(0), getXGrid(col), getYGrid(rows), gridPaint);*/
         if (!touchEnabled && !theBoard.checkGameOver())
             canvas.drawCircle(getX(col), y, diameter / 2, theBoard.lastLetterPlayed == State.X ? oPaint : xPaint);
     }
 
     private int getX(int columnIndex) {
-        return (int) (getWidth() / cols * (columnIndex + 1 / 2.0f));
+        return (int) (0.5f * (getWidth() - cols * (diameter+padding)) + 0.5f*(diameter+padding) + (diameter+padding) * columnIndex);
+        //return (int) (0.5f * (getWidth() - cols * diameter + diameter) + (diameter+padding) * columnIndex - 2*padding);
+        //return (int) (getWidth() / cols * (columnIndex + 1 / 2.0f));
     }
 
     private int getY(int rowIndex) {
-        return (int) (getHeight() / rows * (rowIndex + 1 / 2.0f));
+        return (int) (0.5f * (getHeight() - rows * (diameter+padding)) + 0.5f*(diameter+padding) + (diameter+padding) * rowIndex);
+        //return (int) (getHeight() / rows * (rowIndex + 1 / 2.0f));
+    }
+    //gets the grid BEFORE each circle
+    private int getXGrid(int columnIndex) {
+        return (int) (getX(columnIndex)-(diameter+padding)/2.0f);
+    }
+    //gets the grid BEFORE each circle
+    private int getYGrid(int rowIndex) {
+        return (int) (getY(rowIndex)-(diameter+padding)/2.0f);
     }
 }

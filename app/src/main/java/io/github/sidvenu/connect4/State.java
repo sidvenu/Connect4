@@ -21,7 +21,7 @@ public class State {
     static final String HORIZONTAL = "HORIZONTAL";
     static final String VERTICAL = "VERTICAL";
 
-    int EMPTY = 0;              //Blank space
+    static final int EMPTY = 0;              //Blank space
     //We need to know the player that made the last move
     GamePlay lastMove;
     int lastLetterPlayed;
@@ -237,7 +237,7 @@ public class State {
             }
         }
         //There is no winner yet :(
-        setWinner(0);
+        setWinner(EMPTY);
         return false;
     }//end checkWinState
 
