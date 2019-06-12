@@ -35,7 +35,8 @@ public class MinMax {
         // If MIN is called on a state that is terminal or after a maximum depth is reached, then a heuristic is calculated on the state and the move returned.
         if((board.checkGameOver()) || (depth == maxDepth)){
             GamePlay baseMove = new GamePlay();
-            baseMove = baseMove.possibleMove(board.lastMove.row, board.lastMove.col, board.utilityFunction());
+            GamePlay lastMove = board.lastMoves.get(board.lastMoves.size()-1);
+            baseMove = baseMove.possibleMove(lastMove.row, lastMove.col, board.utilityFunction());
             return baseMove;
         }else{
             //The children-moves of the state are calculated (expansion)
@@ -44,6 +45,7 @@ public class MinMax {
             minMove = minMove.moveToCompare(Integer.MAX_VALUE);
             for (int i =0; i < children.size();i++) {
                 State child = children.get(i);
+                GamePlay lastMove = child.lastMoves.get(child.lastMoves.size()-1);
                 //And for each child max is called, on a lower depth
                 GamePlay move = max(child, depth + 1);
                 //The child-move with the lowest value is selected and returned by max
@@ -51,14 +53,14 @@ public class MinMax {
                     if ((move.getValue() == minMove.getValue())) {
                         //If the heuristic has the same value then we randomly choose one of the two moves
                         if (r.nextInt(2) == 0) { //If 0, we rewrite the maxMove. Else, the maxMove is the same
-                            minMove.setRow(child.lastMove.row);
-                            minMove.setCol(child.lastMove.col);
+                            minMove.setRow(lastMove.row);
+                            minMove.setCol(lastMove.col);
                             minMove.setValue(move.getValue());
                         }
                     }
                     else {
-                        minMove.setRow(child.lastMove.row);
-                        minMove.setCol(child.lastMove.col);
+                        minMove.setRow(lastMove.row);
+                        minMove.setCol(lastMove.col);
                         minMove.setValue(move.getValue());
                     }
                 }
@@ -73,7 +75,8 @@ public class MinMax {
         //If MAX is called on a state that is terminal or after a maximum depth is reached, then a heuristic is calculated on the state and the move returned.
         if((board.checkGameOver()) || (depth == maxDepth)) {
             GamePlay baseMove = new GamePlay();
-            baseMove = baseMove.possibleMove(board.lastMove.row, board.lastMove.col, board.utilityFunction());
+            GamePlay lastMove = board.lastMoves.get(board.lastMoves.size()-1);
+            baseMove = baseMove.possibleMove(lastMove.row, lastMove.col, board.utilityFunction());
             return baseMove;
         }else{
             LinkedList<State> children = new LinkedList<State>(board.getChildren(computerLetter));
@@ -81,19 +84,20 @@ public class MinMax {
             maxMove = maxMove.moveToCompare(Integer.MIN_VALUE);
             for (int i =0; i < children.size();i++) {
                 State child = children.get(i);
+                GamePlay lastMove = child.lastMoves.get(child.lastMoves.size()-1);
                 GamePlay move = min(child, depth + 1);
                 //Here is the difference with Min method: The greatest value is selected
                 if(move.getValue() >= maxMove.getValue()) {
                     if ((move.getValue() == maxMove.getValue())) {
                         if (r.nextInt(2) == 0) {
-                            maxMove.setRow(child.lastMove.row);
-                            maxMove.setCol(child.lastMove.col);
+                            maxMove.setRow(lastMove.row);
+                            maxMove.setCol(lastMove.col);
                             maxMove.setValue(move.getValue());
                         }
                     }
                 else {
-                    maxMove.setRow(child.lastMove.row);
-                    maxMove.setCol(child.lastMove.col);
+                    maxMove.setRow(lastMove.row);
+                    maxMove.setCol(lastMove.col);
                     maxMove.setValue(move.getValue());
                     }
                 }

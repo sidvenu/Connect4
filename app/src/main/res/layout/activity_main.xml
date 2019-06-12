@@ -6,12 +6,86 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <io.github.sidvenu.connect4.GameView
+    <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/background" />
+
+    <io.github.sidvenu.connect4.GameView
+        android:id="@+id/game_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ImageView
+        android:id="@+id/undo_move"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:src="@drawable/ic_undo_black_24dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.checkbox.MaterialCheckBox
+        android:id="@+id/computer_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:text="Computer"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        app:buttonTint="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="@id/undo_move"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@id/undo_move"
+        app:useMaterialThemeColors="false" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/center_guideline"
+        android:layout_width="0dp"
+        android:orientation="vertical"
+        android:layout_height="match_parent"
+        app:layout_constraintGuide_percent="0.5"/>
+
+    <TextView
+        android:id="@+id/rows_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Rows: "
+        app:layout_constraintBottom_toBottomOf="@id/row_picker"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="@id/row_picker"
+        app:layout_constraintTop_toTopOf="@id/row_picker" />
+
+    <NumberPicker
+        android:id="@+id/row_picker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleX="0.75"
+        android:scaleY="0.75"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="@id/rows_text"
+        app:layout_constraintRight_toRightOf="@id/center_guideline" />
+
+    <TextView
+        android:id="@+id/cols_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cols: "
+        app:layout_constraintBottom_toBottomOf="@id/col_picker"
+        app:layout_constraintLeft_toLeftOf="@id/center_guideline"
+        app:layout_constraintRight_toRightOf="@id/col_picker"
+        app:layout_constraintTop_toTopOf="@id/col_picker" />
+
+    <NumberPicker
+        android:id="@+id/col_picker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleX="0.75"
+        android:scaleY="0.75"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="@id/cols_text"
+        app:layout_constraintRight_toRightOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

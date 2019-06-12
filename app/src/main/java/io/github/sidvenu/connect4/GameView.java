@@ -7,7 +7,6 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -35,6 +34,7 @@ public class GameView extends View {
     String PROPERTY_Y = "prop_y";
 
     boolean computerPlaying = true;
+    boolean undoAllowed = true;
     MinMax computerPlayer;
     State theBoard;
 
@@ -61,9 +61,9 @@ public class GameView extends View {
 
     public void init(Context context) {
         this.context = context;
-        xPaint.setColor(getResources().getColor(android.R.color.holo_red_dark));
-        oPaint.setColor(getResources().getColor(android.R.color.holo_blue_dark));
-        nonFilledPaint.setColor(getResources().getColor(android.R.color.white));
+        xPaint.setColor(getResources().getColor(R.color.orange));
+        oPaint.setColor(getResources().getColor(R.color.blue));
+        nonFilledPaint.setColor(getResources().getColor(R.color.transparent_dark_gray));
         winStrokePaint.setColor(getResources().getColor(R.color.yellow));
         winStrokePaint.setStyle(Paint.Style.STROKE);
         winStrokePaint.setStrokeWidth(winStrokeWidth);
@@ -83,6 +83,18 @@ public class GameView extends View {
     public void restartGame() {
         theBoard = new State(rows, cols);
         invalidate();
+    }
+
+    public void undoMove() {
+        Log.v("TAGundo", "GameView");
+        if(undoAllowed) {
+            theBoard.undoMove();
+            if (computerPlaying) {
+                theBoard.undoMove();
+            }
+            touchEnabled = true;
+            invalidate();
+        }
     }
 
     @Override
@@ -108,7 +120,7 @@ public class GameView extends View {
     private void handleTouch(float x, float y) {
         diameter = getWidth() * 1.0f / cols - padding;
         col = (int) (cols * x / getWidth());
-        if(y<getYGrid(0)||y>getYGrid(rows))
+        if(y<getYGrid(0)||y>getYGrid(rows)||x<getXGrid(0)||x>getXGrid(cols))
             return;
 
         /*int times = 0;
@@ -119,8 +131,9 @@ public class GameView extends View {
         if (!theBoard.checkFullColumn(col)) {
             int row = theBoard.getRowPosition(col);
             int maxY = getY(row);
-            PropertyValuesHolder propertyY = PropertyValuesHolder.ofInt(PROPERTY_Y, 0, maxY);
+            PropertyValuesHolder propertyY = PropertyValuesHolder.ofInt(PROPERTY_Y, getY(-1), maxY);
             touchEnabled = false;
+            undoAllowed = false;
             ValueAnimator animator = new ValueAnimator();
             animator.setValues(propertyY);
             animator.setDuration(500);
@@ -136,6 +149,7 @@ public class GameView extends View {
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);
                     //game.add(current);
+                    Log.v("TAGundo", "lol");
                     theBoard.makeMove(col, theBoard.lastLetterPlayed == State.X ? State.O : State.X);
                     if (theBoard.checkGameOver()) {
                         Toast.makeText(context, "Game over", Toast.LENGTH_LONG).show();
@@ -144,16 +158,20 @@ public class GameView extends View {
                     }
                     //current = null;
                     invalidate();
-                    new Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (computerPlaying && theBoard.lastLetterPlayed == State.X) {
+                    if (computerPlaying && theBoard.lastLetterPlayed == State.X) {
+                        undoAllowed = false;
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
                                 float x = getX(computerPlayer.getNextMove(theBoard).col);
-                                MotionEvent computerTouch = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.elapsedRealtime() + 100, MotionEvent.ACTION_DOWN, x, getHeight()/2.0f, 0);
+                                MotionEvent computerTouch = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.elapsedRealtime() + 100, MotionEvent.ACTION_DOWN, x, getHeight() / 2.0f, 0);
                                 onTouchEvent(computerTouch);
+
                             }
-                        }
-                    }, 100);
+                        }, 100);
+                    } else {
+                        undoAllowed = true;
+                    }
                 }
             });
             animator.start();
@@ -167,7 +185,7 @@ public class GameView extends View {
         diameter = getWidth() * 1.0f / cols - padding;
         gridPaint.setStyle(Paint.Style.FILL);
         //canvas.drawPaint(gridPaint);
-        canvas.drawRect(getXGrid(0), getYGrid(0), getXGrid(cols), getYGrid(rows), gridPaint);
+        //canvas.drawRect(getXGrid(0), getYGrid(0), getXGrid(cols), getYGrid(rows), gridPaint);
 
 
         int[][] board = theBoard.gameBoard;
@@ -195,8 +213,10 @@ public class GameView extends View {
         //vertical
         for(int col = 0; col<= cols; col++)
             canvas.drawLine(getXGrid(col), getYGrid(0), getXGrid(col), getYGrid(rows), gridPaint);*/
-        if (!touchEnabled && !theBoard.checkGameOver())
+        if (!touchEnabled && !theBoard.checkGameOver()) {
+            Log.v("TAG", "drawing anim");
             canvas.drawCircle(getX(col), y, diameter / 2, theBoard.lastLetterPlayed == State.X ? oPaint : xPaint);
+        }
     }
 
     private int getX(int columnIndex) {

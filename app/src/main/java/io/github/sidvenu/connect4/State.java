@@ -2,6 +2,7 @@ package io.github.sidvenu.connect4;
 
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 
@@ -23,7 +24,7 @@ public class State {
 
     static final int EMPTY = 0;              //Blank space
     //We need to know the player that made the last move
-    GamePlay lastMove;
+    ArrayList<GamePlay> lastMoves;
     int lastLetterPlayed;
     int winner;
     int[][] gameBoard;
@@ -35,7 +36,7 @@ public class State {
 
     //Constructor of a state (board)
     public State(int rows, int cols) {
-        lastMove = new GamePlay();
+        lastMoves = new ArrayList<>();
         lastLetterPlayed = O; //The user starts first
         winner = 0;
         setBoardSize(rows, cols);
@@ -62,10 +63,27 @@ public class State {
 
     //Make a movement based on a column and a player
     public void makeMove(int col, int letter) {
-        lastMove = lastMove.moveDone(getRowPosition(col), col);
+        Log.v("TAGundo","makeMove row:"+getRowPosition(col)+"col:"+col);
+        if (lastMoves.isEmpty())
+            lastMoves.add(new GamePlay().moveDone(getRowPosition(col), col));
+        else
+            lastMoves.add(
+                    lastMoves.get(lastMoves.size() - 1).moveDone(getRowPosition(col), col)
+            );
         gameBoard[getRowPosition(col)][col] = letter;
         lastLetterPlayed = letter;
     }//end makeMove
+
+    public void undoMove() {
+        Log.v("TAGundo", "undoMove");
+        if (!lastMoves.isEmpty()) {
+            GamePlay lastMove = lastMoves.remove(lastMoves.size() - 1);
+            gameBoard[lastMove.row][lastMove.col] = EMPTY;
+            Log.v("TAGundo", "undoing row:"+lastMove.row+"col:"+lastMove.col);
+            lastLetterPlayed = lastLetterPlayed == X ? O : X;
+
+        }
+    }
 
     //Checks whether a move is valid; whether a square is empty. Used only when we need to expand a movement
     public boolean isValidMove(int col) {
@@ -81,7 +99,7 @@ public class State {
 
     //Is used when we need to make a movement (Is possible to move the piece?)
     public boolean canMove(int row, int col) {
-        //We evaluate mainly the limits of the board 
+        //We evaluate mainly the limits of the board
         if ((row <= -1) || (col <= -1) || (row >= rows) || (col >= cols)) {
             return false;
         }
@@ -112,7 +130,7 @@ public class State {
     //This method help us to expand the board (it´s a board state given a move)
     public State boardWithExpansion(State board) {
         State expansion = new State(rows, cols);
-        expansion.lastMove = board.lastMove;
+        expansion.lastMoves = new ArrayList<>(board.lastMoves);
         expansion.lastLetterPlayed = board.lastLetterPlayed;
         expansion.winner = board.winner;
         expansion.gameBoard = new int[rows][cols];
@@ -159,7 +177,6 @@ public class State {
     //Is there a possible winner movement? (4In)
     public boolean checkWinState() {
         //Case if we have 4-row
-        Log.v("TAG", "rows:" + rows + "cols:" + cols);
         for (int i = rows - 1; i >= 0; i--) {
             for (int j = 0; j < cols - 3; j++) {
                 if (gameBoard[i][j] == gameBoard[i][j + 1] && gameBoard[i][j] == gameBoard[i][j + 2] && gameBoard[i][j] == gameBoard[i][j + 3] && gameBoard[i][j] != EMPTY) {
@@ -168,11 +185,11 @@ public class State {
                     winningPositions[0][0] = i;
                     winningPositions[0][1] = j;
                     winningPositions[1][0] = i;
-                    winningPositions[1][1] = j+1;
+                    winningPositions[1][1] = j + 1;
                     winningPositions[2][0] = i;
-                    winningPositions[2][1] = j+2;
+                    winningPositions[2][1] = j + 2;
                     winningPositions[3][0] = i;
-                    winningPositions[3][1] = j+3;
+                    winningPositions[3][1] = j + 3;
                     return true;
                 }
             }
@@ -186,11 +203,11 @@ public class State {
                     setWinnerMethod(VERTICAL);
                     winningPositions[0][0] = i;
                     winningPositions[0][1] = j;
-                    winningPositions[1][0] = i-1;
+                    winningPositions[1][0] = i - 1;
                     winningPositions[1][1] = j;
-                    winningPositions[2][0] = i-2;
+                    winningPositions[2][0] = i - 2;
                     winningPositions[2][1] = j;
-                    winningPositions[3][0] = i-3;
+                    winningPositions[3][0] = i - 3;
                     winningPositions[3][1] = j;
                     return true;
                 }
@@ -205,12 +222,12 @@ public class State {
                     setWinnerMethod(ASC_DIAGONAL);
                     winningPositions[0][0] = i;
                     winningPositions[0][1] = j;
-                    winningPositions[1][0] = i+1;
-                    winningPositions[1][1] = j+1;
-                    winningPositions[2][0] = i+2;
-                    winningPositions[2][1] = j+2;
-                    winningPositions[3][0] = i+3;
-                    winningPositions[3][1] = j+3;
+                    winningPositions[1][0] = i + 1;
+                    winningPositions[1][1] = j + 1;
+                    winningPositions[2][0] = i + 2;
+                    winningPositions[2][1] = j + 2;
+                    winningPositions[3][0] = i + 3;
+                    winningPositions[3][1] = j + 3;
                     return true;
                 }
             }
@@ -225,18 +242,19 @@ public class State {
                         setWinnerMethod(DESC_DIAGONAL);
                         winningPositions[0][0] = i;
                         winningPositions[0][1] = j;
-                        winningPositions[1][0] = i-1;
-                        winningPositions[1][1] = j+1;
-                        winningPositions[2][0] = i-2;
-                        winningPositions[2][1] = j+2;
-                        winningPositions[3][0] = i-3;
-                        winningPositions[3][1] = j+3;
+                        winningPositions[1][0] = i - 1;
+                        winningPositions[1][1] = j + 1;
+                        winningPositions[2][0] = i - 2;
+                        winningPositions[2][1] = j + 2;
+                        winningPositions[3][0] = i - 3;
+                        winningPositions[3][1] = j + 3;
                         return true;
                     }
                 }
             }
         }
         //There is no winner yet :(
+        Log.v("TAGundo", "NO WINNER YET");
         setWinner(EMPTY);
         return false;
     }//end checkWinState
