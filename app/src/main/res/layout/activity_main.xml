@@ -19,34 +19,46 @@
 
     <ImageView
         android:id="@+id/undo_move"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
         android:layout_marginTop="20dp"
         android:src="@drawable/ic_undo_black_24dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintHorizontal_bias="0.25"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/restart_game"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@drawable/ic_refresh_black_24dp"
+        app:layout_constraintBottom_toBottomOf="@id/undo_move"
+        app:layout_constraintLeft_toLeftOf="@id/computer_checkbox"
+        app:layout_constraintTop_toTopOf="@id/undo_move" />
 
     <com.google.android.material.checkbox.MaterialCheckBox
         android:id="@+id/computer_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginRight="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="10dp"
         android:checked="true"
         android:text="Computer"
         android:textColor="@android:color/white"
         android:textSize="20sp"
         app:buttonTint="@android:color/white"
-        app:layout_constraintBottom_toBottomOf="@id/undo_move"
+        app:layout_constraintTop_toBottomOf="@id/restart_game"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/undo_move"
         app:useMaterialThemeColors="false" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/center_guideline"
         android:layout_width="0dp"
-        android:orientation="vertical"
         android:layout_height="match_parent"
-        app:layout_constraintGuide_percent="0.5"/>
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
 
     <TextView
         android:id="@+id/rows_text"

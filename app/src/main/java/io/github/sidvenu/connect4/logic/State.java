@@ -1,4 +1,4 @@
-package io.github.sidvenu.connect4;
+package io.github.sidvenu.connect4.logic;
 
 import android.util.Log;
 
@@ -7,6 +7,7 @@ import java.util.LinkedList;
 
 
 /**
+ * Original Version: https://github.com/raulgonzalezcz/Connect4-AI-Java
  * @author Raúl González <raul.gonzalezcz@udlap.mx> ID: 151211
  * @version 1.0
  * @since 05/05/17
@@ -15,23 +16,17 @@ import java.util.LinkedList;
 
 public class State {
 
-    static final int X = 1;     //User (used in Main and switch case)
-    static final int O = -1;    //Computer (used in Main and switch case)
-    static final String ASC_DIAGONAL = "ASC_DIAGONAL";
-    static final String DESC_DIAGONAL = "DESC_DIAGONAL";
-    static final String HORIZONTAL = "HORIZONTAL";
-    static final String VERTICAL = "VERTICAL";
+    public static final int X = 1;     //User (used in Main and switch case)
+    public static final int O = -1;    //Computer (used in Main and switch case)
 
-    static final int EMPTY = 0;              //Blank space
+    public static final int EMPTY = 0;              //Blank space
     //We need to know the player that made the last move
     ArrayList<GamePlay> lastMoves;
-    int lastLetterPlayed;
-    int winner;
-    int[][] gameBoard;
-    int rows, cols;
-    int winRow, winCol;
-    String winningMethod;       //Winner by [row, column, diagonal]
-    int[][] winningPositions = new int[4][2];
+    public int lastLetterPlayed;
+    public int winner;
+    public int[][] gameBoard;
+    private int rows, cols;
+    public int[][] winningPositions = new int[4][2];
     //------------
 
     //Constructor of a state (board)
@@ -48,18 +43,14 @@ public class State {
         }
     }
 
-    public void setBoardSize(int rows, int cols) {
+    private void setBoardSize(int rows, int cols) {
         this.rows = rows;
         this.cols = cols;
     }
 
-    public void setWinner(int winner) {
+    private void setWinner(int winner) {
         this.winner = winner;
     }//end setWinner
-
-    public void setWinnerMethod(String winningMethod) {
-        this.winningMethod = winningMethod;
-    }//end setWinnerMethod
 
     //Make a movement based on a column and a player
     public void makeMove(int col, int letter) {
@@ -86,24 +77,18 @@ public class State {
     }
 
     //Checks whether a move is valid; whether a square is empty. Used only when we need to expand a movement
-    public boolean isValidMove(int col) {
+    private boolean isValidMove(int col) {
         int row = getRowPosition(col);
         if ((row <= -1) || (col <= -1) || (row >= rows) || (col >= cols)) {
             return false;
         }
-        if (gameBoard[row][col] != EMPTY) {
-            return false;
-        }
-        return true;
+        return gameBoard[row][col] == EMPTY;
     }//end isValidMove
 
     //Is used when we need to make a movement (Is possible to move the piece?)
-    public boolean canMove(int row, int col) {
+    private boolean canMove(int row, int col) {
         //We evaluate mainly the limits of the board
-        if ((row <= -1) || (col <= -1) || (row >= rows) || (col >= cols)) {
-            return false;
-        }
-        return true;
+        return (row > -1) && (col > -1) && (row < rows) && (col < cols);
     }//end CanMove
 
     //Is a column full?
@@ -128,7 +113,7 @@ public class State {
     }//end getRowPosition
 
     //This method help us to expand the board (it´s a board state given a move)
-    public State boardWithExpansion(State board) {
+    State boardWithExpansion(State board) {
         State expansion = new State(rows, cols);
         expansion.lastMoves = new ArrayList<>(board.lastMoves);
         expansion.lastLetterPlayed = board.lastLetterPlayed;
@@ -143,7 +128,7 @@ public class State {
     }//end boardWithExpansion
 
     //Generates the children of the state. The max number of the children is 7 because we have 7 columns
-    public LinkedList<State> getChildren(int letter) {
+    LinkedList<State> getChildren(int letter) {
         LinkedList<State> children = new LinkedList<>();
         for (int col = 0; col < cols; col++) {
             if (isValidMove(col)) {
@@ -155,7 +140,7 @@ public class State {
         return children;
     }//end getChildren
 
-    public int utilityFunction() {
+    int utilityFunction() {
         //MAX plays 'O'
         // +90 if 'O' wins, -90 'X' wins,
         // +10 if three 'O' in a row, -5 three 'X' in a row,
@@ -175,13 +160,12 @@ public class State {
     }//end utilityFunction
 
     //Is there a possible winner movement? (4In)
-    public boolean checkWinState() {
+    private boolean checkWinState() {
         //Case if we have 4-row
         for (int i = rows - 1; i >= 0; i--) {
             for (int j = 0; j < cols - 3; j++) {
                 if (gameBoard[i][j] == gameBoard[i][j + 1] && gameBoard[i][j] == gameBoard[i][j + 2] && gameBoard[i][j] == gameBoard[i][j + 3] && gameBoard[i][j] != EMPTY) {
                     setWinner(gameBoard[i][j]);
-                    setWinnerMethod(HORIZONTAL);
                     winningPositions[0][0] = i;
                     winningPositions[0][1] = j;
                     winningPositions[1][0] = i;
@@ -200,7 +184,6 @@ public class State {
             for (int j = 0; j < cols; j++) {
                 if (gameBoard[i][j] == gameBoard[i - 1][j] && gameBoard[i][j] == gameBoard[i - 2][j] && gameBoard[i][j] == gameBoard[i - 3][j] && gameBoard[i][j] != EMPTY) {
                     setWinner(gameBoard[i][j]);
-                    setWinnerMethod(VERTICAL);
                     winningPositions[0][0] = i;
                     winningPositions[0][1] = j;
                     winningPositions[1][0] = i - 1;
@@ -219,7 +202,6 @@ public class State {
             for (int j = 0; j < cols - 3; j++) {
                 if (gameBoard[i][j] == gameBoard[i + 1][j + 1] && gameBoard[i][j] == gameBoard[i + 2][j + 2] && gameBoard[i][j] == gameBoard[i + 3][j + 3] && gameBoard[i][j] != EMPTY) {
                     setWinner(gameBoard[i][j]);
-                    setWinnerMethod(ASC_DIAGONAL);
                     winningPositions[0][0] = i;
                     winningPositions[0][1] = j;
                     winningPositions[1][0] = i + 1;
@@ -239,7 +221,6 @@ public class State {
                 if (canMove(i - 3, j + 3)) {
                     if (gameBoard[i][j] == gameBoard[i - 1][j + 1] && gameBoard[i][j] == gameBoard[i - 2][j + 2] && gameBoard[i][j] == gameBoard[i - 3][j + 3] && gameBoard[i][j] != EMPTY) {
                         setWinner(gameBoard[i][j]);
-                        setWinnerMethod(DESC_DIAGONAL);
                         winningPositions[0][0] = i;
                         winningPositions[0][1] = j;
                         winningPositions[1][0] = i - 1;
@@ -260,7 +241,7 @@ public class State {
     }//end checkWinState
 
     //Checks if there are 3 pieces of a same player
-    public int check3In(int player) {
+    private int check3In(int player) {
         int times = 0;
         //In row
         for (int i = rows - 1; i >= 0; i--) {
@@ -309,7 +290,7 @@ public class State {
     }//end check3In
 
     //Checks if there are 2 pieces of a same player
-    public int check2In(int player) {
+    private int check2In(int player) {
         int times = 0;
         //In a row
         for (int i = rows - 1; i >= 0; i--) {
@@ -372,22 +353,4 @@ public class State {
         }
         return true;
     }//end checkGameOver
-
-    //Print the board
-    public void printBoard() {
-        System.out.println("| 1 | 2 | 3 | 4 | 5 | 6 | 7 |");
-        System.out.println();
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 7; j++) {
-                if (gameBoard[i][j] == 1) {
-                    System.out.print("| " + "\u001B[34mX" + "\u001B[30m "); //Blue for user
-                } else if (gameBoard[i][j] == -1) {
-                    System.out.print("| " + "\u001B[31mO" + "\u001B[30m "); //Red for computer
-                } else {
-                    System.out.print("| " + "-" + " ");
-                }
-            }
-            System.out.println("|"); //End of each row
-        }
-    }//end printBoard
 }//end State

@@ -7,17 +7,20 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import io.github.sidvenu.connect4.logic.MinMax;
+import io.github.sidvenu.connect4.logic.State;
 
 public class GameView extends View {
 
@@ -33,8 +36,10 @@ public class GameView extends View {
     int padding = 10;
     String PROPERTY_Y = "prop_y";
 
+    MediaPlayer xPop, oPop, gameOverSound;
+
     boolean computerPlaying = true;
-    boolean undoAllowed = true;
+    boolean boardChangesAllowed = true;
     MinMax computerPlayer;
     State theBoard;
 
@@ -61,6 +66,9 @@ public class GameView extends View {
 
     public void init(Context context) {
         this.context = context;
+        xPop = createMediaPlayer(R.raw.pop_x);
+        oPop = createMediaPlayer(R.raw.pop_o);
+        gameOverSound = createMediaPlayer(R.raw.game_over);
         xPaint.setColor(getResources().getColor(R.color.orange));
         oPaint.setColor(getResources().getColor(R.color.blue));
         nonFilledPaint.setColor(getResources().getColor(R.color.transparent_dark_gray));
@@ -81,15 +89,17 @@ public class GameView extends View {
     }
 
     public void restartGame() {
-        theBoard = new State(rows, cols);
-        invalidate();
+        if(boardChangesAllowed) {
+            theBoard = new State(rows, cols);
+            touchEnabled = true;
+            invalidate();
+        }
     }
 
     public void undoMove() {
-        Log.v("TAGundo", "GameView");
-        if(undoAllowed) {
+        if (boardChangesAllowed) {
             theBoard.undoMove();
-            if (computerPlaying) {
+            if (computerPlaying && theBoard.lastLetterPlayed == State.X) {
                 theBoard.undoMove();
             }
             touchEnabled = true;
@@ -120,20 +130,15 @@ public class GameView extends View {
     private void handleTouch(float x, float y) {
         diameter = getWidth() * 1.0f / cols - padding;
         col = (int) (cols * x / getWidth());
-        if(y<getYGrid(0)||y>getYGrid(rows)||x<getXGrid(0)||x>getXGrid(cols))
+        if (y < getYGrid(0) || y > getYGrid(rows) || x < getXGrid(0) || x > getXGrid(cols))
             return;
 
-        /*int times = 0;
-        for (Integer i : game) {
-            if (i.equals(current))
-                times++;
-        }*/
         if (!theBoard.checkFullColumn(col)) {
             int row = theBoard.getRowPosition(col);
             int maxY = getY(row);
             PropertyValuesHolder propertyY = PropertyValuesHolder.ofInt(PROPERTY_Y, getY(-1), maxY);
             touchEnabled = false;
-            undoAllowed = false;
+            boardChangesAllowed = false;
             ValueAnimator animator = new ValueAnimator();
             animator.setValues(propertyY);
             animator.setDuration(500);
@@ -145,21 +150,29 @@ public class GameView extends View {
                 }
             });
             animator.addListener(new AnimatorListenerAdapter() {
+
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);
                     //game.add(current);
-                    Log.v("TAGundo", "lol");
                     theBoard.makeMove(col, theBoard.lastLetterPlayed == State.X ? State.O : State.X);
                     if (theBoard.checkGameOver()) {
-                        Toast.makeText(context, "Game over", Toast.LENGTH_LONG).show();
+                        Toast.makeText(context, "Game Over", Toast.LENGTH_LONG).show();
+                        gameOverSound.start();
                     } else {
                         touchEnabled = true;
+                        if (xPop == null)
+                            xPop = createMediaPlayer(R.raw.pop_x);
+                        if (oPop == null)
+                            oPop = createMediaPlayer(R.raw.pop_o);
+                        if (theBoard.lastLetterPlayed == State.X)
+                            oPop.start();
+                        else xPop.start();
                     }
                     //current = null;
                     invalidate();
-                    if (computerPlaying && theBoard.lastLetterPlayed == State.X) {
-                        undoAllowed = false;
+                    if (computerPlaying && theBoard.lastLetterPlayed == State.X && !theBoard.checkGameOver()) {
+                        boardChangesAllowed = false;
                         new Handler().postDelayed(new Runnable() {
                             @Override
                             public void run() {
@@ -170,7 +183,7 @@ public class GameView extends View {
                             }
                         }, 100);
                     } else {
-                        undoAllowed = true;
+                        boardChangesAllowed = true;
                     }
                 }
             });
@@ -178,15 +191,31 @@ public class GameView extends View {
         }
     }
 
+    MediaPlayer createMediaPlayer(int soundResource) {
+        MediaPlayer player = MediaPlayer.create(context, soundResource);
+        player.setLooping(false);
+        return player;
+    }
+
+    void destroyMediaPlayer(MediaPlayer player) {
+        if (player != null) {
+            player.reset();
+            player.release();
+            player = null;
+        }
+    }
+
+    void cleanupResources() {
+        destroyMediaPlayer(xPop);
+        destroyMediaPlayer(oPop);
+        destroyMediaPlayer(gameOverSound);
+    }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         diameter = getWidth() * 1.0f / cols - padding;
         gridPaint.setStyle(Paint.Style.FILL);
-        //canvas.drawPaint(gridPaint);
-        //canvas.drawRect(getXGrid(0), getYGrid(0), getXGrid(cols), getYGrid(rows), gridPaint);
-
 
         int[][] board = theBoard.gameBoard;
         for (int row = 0; row < rows; row++) {
@@ -207,34 +236,27 @@ public class GameView extends View {
                 }
             }
         }
-        /*//horizontal
-        for(int row = 0; row<= rows; row++)
-            canvas.drawLine(getXGrid(0), getYGrid(row), getXGrid(cols), getYGrid(row), gridPaint);
-        //vertical
-        for(int col = 0; col<= cols; col++)
-            canvas.drawLine(getXGrid(col), getYGrid(0), getXGrid(col), getYGrid(rows), gridPaint);*/
+
         if (!touchEnabled && !theBoard.checkGameOver()) {
-            Log.v("TAG", "drawing anim");
             canvas.drawCircle(getX(col), y, diameter / 2, theBoard.lastLetterPlayed == State.X ? oPaint : xPaint);
         }
     }
 
     private int getX(int columnIndex) {
-        return (int) (0.5f * (getWidth() - cols * (diameter+padding)) + 0.5f*(diameter+padding) + (diameter+padding) * columnIndex);
-        //return (int) (0.5f * (getWidth() - cols * diameter + diameter) + (diameter+padding) * columnIndex - 2*padding);
-        //return (int) (getWidth() / cols * (columnIndex + 1 / 2.0f));
+        return (int) (0.5f * (getWidth() - cols * (diameter + padding)) + 0.5f * (diameter + padding) + (diameter + padding) * columnIndex);
     }
 
     private int getY(int rowIndex) {
-        return (int) (0.5f * (getHeight() - rows * (diameter+padding)) + 0.5f*(diameter+padding) + (diameter+padding) * rowIndex);
-        //return (int) (getHeight() / rows * (rowIndex + 1 / 2.0f));
+        return (int) (0.5f * (getHeight() - rows * (diameter + padding)) + 0.5f * (diameter + padding) + (diameter + padding) * rowIndex);
     }
+
     //gets the grid BEFORE each circle
     private int getXGrid(int columnIndex) {
-        return (int) (getX(columnIndex)-(diameter+padding)/2.0f);
+        return (int) (getX(columnIndex) - (diameter + padding) / 2.0f);
     }
+
     //gets the grid BEFORE each circle
     private int getYGrid(int rowIndex) {
-        return (int) (getY(rowIndex)-(diameter+padding)/2.0f);
+        return (int) (getY(rowIndex) - (diameter + padding) / 2.0f);
     }
 }

@@ -1,9 +1,10 @@
-package io.github.sidvenu.connect4;
+package io.github.sidvenu.connect4.logic;
 import java.util.LinkedList;
 import java.util.Random;
 
 
 /**
+ * Original Version: https://github.com/raulgonzalezcz/Connect4-AI-Java
  * @author Raúl González <raul.gonzalezcz@udlap.mx> ID: 151211
  * @version 1.0
  * @since 05/05/17
@@ -12,9 +13,9 @@ import java.util.Random;
 
 public class MinMax {
     //Variable that holds the maximum depth the MinMax algorithm will reach (level of the three)
-    int maxDepth;
+    private int maxDepth;
     //Variable that holds which letter the computer controls
-    int computerLetter;
+    private int computerLetter;
     ////////////////////
 
     public MinMax(int thePlayerLetter) {
@@ -30,7 +31,7 @@ public class MinMax {
 
     //The max and min methods are called interchangingly, one after another until a max depth is reached
     //The difference between Tic Tac Toe program is that here we can specify a depth (number of levels in the three)
-    public GamePlay min(State board, int depth) { //MIN plays 'X' (user)
+    private GamePlay min(State board, int depth) { //MIN plays 'X' (user)
         Random r = new Random();
         // If MIN is called on a state that is terminal or after a maximum depth is reached, then a heuristic is calculated on the state and the move returned.
         if((board.checkGameOver()) || (depth == maxDepth)){
@@ -40,7 +41,7 @@ public class MinMax {
             return baseMove;
         }else{
             //The children-moves of the state are calculated (expansion)
-            LinkedList<State> children = new LinkedList<State>(board.getChildren(State.X));
+            LinkedList<State> children = new LinkedList<>(board.getChildren(State.X));
             GamePlay minMove = new GamePlay();
             minMove = minMove.moveToCompare(Integer.MAX_VALUE);
             for (int i =0; i < children.size();i++) {
@@ -70,7 +71,7 @@ public class MinMax {
     }//end min
 
     //The max and min methods are called interchangingly, one after another until a max depth or game over is reached
-    public GamePlay max(State board, int depth) { //MAX plays 'O'
+    private GamePlay max(State board, int depth) { //MAX plays 'O'
         Random r = new Random();
         //If MAX is called on a state that is terminal or after a maximum depth is reached, then a heuristic is calculated on the state and the move returned.
         if((board.checkGameOver()) || (depth == maxDepth)) {
@@ -79,7 +80,7 @@ public class MinMax {
             baseMove = baseMove.possibleMove(lastMove.row, lastMove.col, board.utilityFunction());
             return baseMove;
         }else{
-            LinkedList<State> children = new LinkedList<State>(board.getChildren(computerLetter));
+            LinkedList<State> children = new LinkedList<>(board.getChildren(computerLetter));
             GamePlay maxMove = new GamePlay();
             maxMove = maxMove.moveToCompare(Integer.MIN_VALUE);
             for (int i =0; i < children.size();i++) {
